@@ -499,18 +499,11 @@ alembic downgrade -1
 
 ## 🚀 Deployment
 
-### Docker Production Build
-
-```bash
-docker build -t internal-wallet:latest .
-docker run -p 8000:8000 \
-  -e DATABASE_URL="postgresql+asyncpg://user:pass@host:5432/db" \
-  internal-wallet:latest
-```
-
 ### Cloud Deployment
 
-deployed on render
+Deployed on Render: [https://internal-wallet.onrender.com/docs](https://internal-wallet.onrender.com/docs)
+
+**⚠️ Note:** Application startup can take up to 30 seconds on first request (cold start).
 
 ---
 
