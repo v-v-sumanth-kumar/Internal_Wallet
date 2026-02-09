@@ -1,4 +1,3 @@
-"""Ledger Entry Model - Double-entry bookkeeping system"""
 from sqlalchemy import Column, Integer, Numeric, DateTime, ForeignKey, Enum, Index
 from sqlalchemy.sql import func
 import enum
@@ -7,8 +6,8 @@ from app.database import Base
 
 class EntryType(str, enum.Enum):
     """Ledger Entry Types"""
-    DEBIT = "DEBIT"    # Money out / decrease
-    CREDIT = "CREDIT"  # Money in / increase
+    DEBIT = "DEBIT"   
+    CREDIT = "CREDIT"  
 
 
 class LedgerEntry(Base):
@@ -25,13 +24,12 @@ class LedgerEntry(Base):
     wallet_id = Column(Integer, ForeignKey("wallets.id"), nullable=False)
     
     entry_type = Column(Enum(EntryType), nullable=False)
-    amount = Column(Numeric(precision=20, scale=2), nullable=False)  # Positive for credit, negative for debit
+    amount = Column(Numeric(precision=20, scale=2), nullable=False) 
     
-    balance_after = Column(Numeric(precision=20, scale=2), nullable=False)  # Snapshot of balance after this entry
+    balance_after = Column(Numeric(precision=20, scale=2), nullable=False)  
     
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     
-    # Indexes for efficient queries
     __table_args__ = (
         Index('idx_ledger_wallet_created', 'wallet_id', 'created_at'),
         Index('idx_ledger_transaction', 'transaction_id'),

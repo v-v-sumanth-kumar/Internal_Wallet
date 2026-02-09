@@ -60,7 +60,6 @@ class WalletService:
         log = result.scalar_one_or_none()
         
         if log:
-            # Return cached response
             return {
                 "status": log.response_status,
                 "body": json.loads(log.response_body) if log.response_body else None
@@ -77,7 +76,7 @@ class WalletService:
         response_body: dict
     ):
         """Save idempotency log for future duplicate checks"""
-        expires_at = datetime.utcnow() + timedelta(hours=24)  # Keep for 24 hours
+        expires_at = datetime.utcnow() + timedelta(hours=24)  
         
         log = IdempotencyLog(
             idempotency_key=idempotency_key,
@@ -192,7 +191,6 @@ class WalletService:
         self.db.add(transaction)
         await self.db.flush()
         
-        # Update balances
         from_wallet.balance -= amount
         to_wallet.balance += amount
         
@@ -236,20 +234,16 @@ class WalletService:
         Top-up user wallet (Purchase flow)
         Money flows from System Treasury to User Wallet
         """
-        # Get asset type
         asset_type = await self._get_asset_type_by_code(asset_type_code)
         
-        # Get or create user wallet
         user_wallet = await self._get_or_create_wallet(user_id, asset_type.id, is_system=False)
         
-        # Get system treasury wallet
         treasury_wallet = await self._get_or_create_wallet(
             f"SYSTEM_TREASURY_{asset_type_code}",
             asset_type.id,
             is_system=True
         )
         
-        # Execute transaction
         metadata = {
             "payment_reference": payment_reference,
             "flow": "topup"
@@ -280,20 +274,16 @@ class WalletService:
         Issue bonus/incentive credits to user
         Money flows from System Bonus Pool to User Wallet
         """
-        # Get asset type
         asset_type = await self._get_asset_type_by_code(asset_type_code)
         
-        # Get or create user wallet
         user_wallet = await self._get_or_create_wallet(user_id, asset_type.id, is_system=False)
         
-        # Get system bonus pool wallet
         bonus_wallet = await self._get_or_create_wallet(
             f"SYSTEM_BONUS_POOL_{asset_type_code}",
             asset_type.id,
             is_system=True
         )
         
-        # Execute transaction
         metadata = {
             "bonus_reason": reason,
             "flow": "bonus"
@@ -325,10 +315,8 @@ class WalletService:
         Spend credits from user wallet (Purchase flow)
         Money flows from User Wallet to System Revenue
         """
-        # Get asset type
         asset_type = await self._get_asset_type_by_code(asset_type_code)
         
-        # Get user wallet
         stmt = select(Wallet).where(
             and_(
                 Wallet.user_id == user_id,
@@ -341,14 +329,12 @@ class WalletService:
         if not user_wallet:
             raise WalletNotFoundError(f"Wallet not found for user {user_id} and asset {asset_type_code}")
         
-        # Get system revenue wallet
         revenue_wallet = await self._get_or_create_wallet(
             f"SYSTEM_REVENUE_{asset_type_code}",
             asset_type.id,
             is_system=True
         )
         
-        # Execute transaction
         metadata = {
             "item_id": item_id,
             "flow": "spend"

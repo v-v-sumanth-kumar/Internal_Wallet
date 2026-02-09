@@ -1,4 +1,3 @@
-"""Transaction Model - Represents wallet transactions"""
 from sqlalchemy import Column, Integer, String, Numeric, DateTime, ForeignKey, Enum, Index
 from sqlalchemy.sql import func
 import enum
@@ -7,11 +6,11 @@ from app.database import Base
 
 class TransactionType(str, enum.Enum):
     """Transaction Types"""
-    TOPUP = "TOPUP"          # User purchases credits
-    BONUS = "BONUS"          # System issues free credits
-    SPEND = "SPEND"          # User spends credits
-    REFUND = "REFUND"        # Refund transaction
-    ADJUSTMENT = "ADJUSTMENT" # Manual adjustment
+    TOPUP = "TOPUP"          
+    BONUS = "BONUS"          
+    SPEND = "SPEND"          
+    REFUND = "REFUND"        
+    ADJUSTMENT = "ADJUSTMENT" 
 
 
 class TransactionStatus(str, enum.Enum):
@@ -31,7 +30,7 @@ class Transaction(Base):
     __tablename__ = "transactions"
     
     id = Column(Integer, primary_key=True, index=True)
-    transaction_id = Column(String(100), unique=True, nullable=False, index=True)  # UUID or unique identifier
+    transaction_id = Column(String(100), unique=True, nullable=False, index=True)  
     idempotency_key = Column(String(255), unique=True, nullable=False, index=True)
     
     transaction_type = Column(Enum(TransactionType), nullable=False)
@@ -43,12 +42,11 @@ class Transaction(Base):
     
     amount = Column(Numeric(precision=20, scale=2), nullable=False)
     description = Column(String(500))
-    meta_data = Column(String(1000))  # JSON string for additional data
+    meta_data = Column(String(1000))  
     
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     completed_at = Column(DateTime(timezone=True))
     
-    # Indexes
     __table_args__ = (
         Index('idx_transaction_type_status', 'transaction_type', 'status'),
         Index('idx_transaction_wallets', 'from_wallet_id', 'to_wallet_id'),

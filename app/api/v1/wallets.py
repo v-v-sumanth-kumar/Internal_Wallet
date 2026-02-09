@@ -50,7 +50,6 @@ async def topup_wallet(
     service = WalletService(db)
     
     try:
-        # Check idempotency
         cached = await service._check_idempotency(
             idempotency_key=idempotency_key,
             request_path="/api/v1/wallets/topup",
@@ -58,10 +57,8 @@ async def topup_wallet(
         )
         
         if cached:
-            # Return cached response
             return cached["body"]
         
-        # Execute transaction (service manages DB transaction internally)
         transaction = await service.topup_wallet(
             user_id=request.user_id,
             asset_type_code=request.asset_type_code,
@@ -83,7 +80,6 @@ async def topup_wallet(
             completed_at=transaction.completed_at
         )
         
-        # Save idempotency log
         await service._save_idempotency_log(
             idempotency_key=idempotency_key,
             request_path="/api/v1/wallets/topup",
@@ -92,7 +88,6 @@ async def topup_wallet(
             response_body=response.model_dump(mode='json')
         )
         
-        # Commit the session
         await db.commit()
         
         return response
@@ -135,7 +130,6 @@ async def issue_bonus(
     service = WalletService(db)
     
     try:
-        # Check idempotency
         cached = await service._check_idempotency(
             idempotency_key=idempotency_key,
             request_path="/api/v1/wallets/bonus",
@@ -214,7 +208,6 @@ async def spend_credits(
     service = WalletService(db)
     
     try:
-        # Check idempotency
         cached = await service._check_idempotency(
             idempotency_key=idempotency_key,
             request_path="/api/v1/wallets/spend",
@@ -324,7 +317,7 @@ async def get_transaction_history(
         transactions = await service.get_transaction_history(
             user_id=user_id,
             asset_type_code=asset_type_code,
-            limit=min(limit, 100),  # Cap at 100
+            limit=min(limit, 100),  
             offset=offset
         )
         
