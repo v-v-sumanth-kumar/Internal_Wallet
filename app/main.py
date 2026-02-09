@@ -43,6 +43,33 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Validation error handler - Returns detailed, user-friendly error messages
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Handle validation errors with detailed messages"""
+    errors = []
+    for error in exc.errors():
+        error_detail = {
+            "field": " -> ".join(str(loc) for loc in error["loc"]),
+            "message": error["msg"],
+            "type": error["type"]
+        }
+        
+        # Add input value if available
+        if "input" in error and error["input"] is not None:
+            error_detail["input"] = error["input"]
+        
+        errors.append(error_detail)
+    
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={
+            "error": "Validation Error",
+            "message": "The request contains invalid data",
+            "details": errors,
+            "request_path": request.url.path
+        }
+    )
 
 # Global exception handler
 @app.exception_handler(Exception)

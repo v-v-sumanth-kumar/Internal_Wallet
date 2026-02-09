@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Header, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, List
+import logging
 
 from app.database import get_db
 from app.schemas.wallet import (
@@ -16,6 +17,9 @@ from app.services.wallet_service import (
     AssetTypeNotFoundError,
     WalletNotFoundError,
 )
+from app.utils.idempotency import generate_idempotency_key
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/wallets", tags=["Wallets"])
 
@@ -93,12 +97,36 @@ async def topup_wallet(
         return response
     
     except AssetTypeNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "Asset Type Not Found",
+                "message": str(e),
+                "user_id": request.user_id,
+                "asset_type_code": request.asset_type_code
+            }
+        )
     except InsufficientFundsError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "Insufficient Funds",
+                "message": str(e),
+                "user_id": request.user_id,
+                "asset_type_code": request.asset_type_code
+            }
+        )
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Transaction failed: {str(e)}")
+        logger.error(f"Topup failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "Transaction Failed",
+                "message": f"Transaction failed: {str(e)}",
+                "type": type(e).__name__
+            }
+        )
 
 
 @router.post("/bonus", response_model=TransactionResponse, status_code=status.HTTP_201_CREATED)
@@ -172,10 +200,26 @@ async def issue_bonus(
         return response
     
     except AssetTypeNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "Asset Type Not Found",
+                "message": str(e),
+                "user_id": request.user_id,
+                "asset_type_code": request.asset_type_code
+            }
+        )
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Transaction failed: {str(e)}")
+        logger.error(f"Bonus failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "Transaction Failed",
+                "message": f"Transaction failed: {str(e)}",
+                "type": type(e).__name__
+            }
+        )
 
 
 @router.post("/spend", response_model=TransactionResponse, status_code=status.HTTP_201_CREATED)
@@ -251,14 +295,46 @@ async def spend_credits(
         return response
     
     except AssetTypeNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "Asset Type Not Found",
+                "message": str(e),
+                "user_id": request.user_id,
+                "asset_type_code": request.asset_type_code
+            }
+        )
     except WalletNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "Wallet Not Found",
+                "message": str(e),
+                "user_id": request.user_id,
+                "asset_type_code": request.asset_type_code
+            }
+        )
     except InsufficientFundsError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "Insufficient Funds",
+                "message": str(e),
+                "user_id": request.user_id,
+                "requested_amount": str(request.amount)
+            }
+        )
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail=f"Transaction failed: {str(e)}")
+        logger.error(f"Spend failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "Transaction Failed",
+                "message": f"Transaction failed: {str(e)}",
+                "type": type(e).__name__
+            }
+        )
 
 
 @router.get("/{user_id}/balance", response_model=WalletBalanceResponse)
@@ -290,9 +366,25 @@ async def get_wallet_balance(
         )
     
     except AssetTypeNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "Asset Type Not Found",
+                "message": str(e),
+                "user_id": user_id,
+                "asset_type_code": asset_type_code
+            }
+        )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get balance: {str(e)}")
+        logger.error(f"Get balance failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "Failed to Get Balance",
+                "message": str(e),
+                "type": type(e).__name__
+            }
+        )
 
 
 @router.get("/{user_id}/transactions", response_model=List[TransactionResponse])
@@ -337,6 +429,22 @@ async def get_transaction_history(
         ]
     
     except AssetTypeNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "Asset Type Not Found",
+                "message": str(e),
+                "user_id": user_id,
+                "asset_type_code": asset_type_code if asset_type_code else "N/A"
+            }
+        )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get transactions: {str(e)}")
+        logger.error(f"Get transactions failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "Failed to Get Transactions",
+                "message": str(e),
+                "type": type(e).__name__
+            }
+        )
