@@ -1,4 +1,3 @@
-"""Wallet Service - Core Business Logic with Concurrency and Idempotency"""
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 from sqlalchemy.exc import IntegrityError

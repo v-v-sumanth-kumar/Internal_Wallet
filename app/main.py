@@ -1,4 +1,3 @@
-"""Main FastAPI Application"""
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,48 +28,16 @@ async def lifespan(app: FastAPI):
     await close_db()
 
 
-# Create FastAPI app
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="""
-    Internal Wallet Service API
-    
-    A high-performance wallet service for managing application-specific virtual currencies.
-    
-    ## Features
-    
-    * **Topup**: Purchase credits using real money
-    * **Bonus**: Issue free credits (referral bonuses, promotions)
-    * **Spend**: Spend credits within the application
-    * **Balance Check**: Get current wallet balance
-    * **Transaction History**: View past transactions
-    
-    ## Key Characteristics
-    
-    * **ACID Compliance**: All transactions are atomic and consistent
-    * **Concurrency Safe**: Uses pessimistic locking to prevent race conditions
-    * **Idempotent**: Duplicate requests return cached responses
-    * **Double-Entry Ledger**: Complete audit trail of all transactions
-    * **Deadlock Prevention**: Locks acquired in consistent order
-    
-    ## Idempotency
-    
-    All mutation endpoints require an `Idempotency-Key` header.
-    Use a unique key per logical request (e.g., `purchase_user123_20260208_abc123`).
-    
-    If the same key is used again within 24 hours, the cached response is returned
-    without processing the request again.
-    """,
     docs_url="/docs",
-    redoc_url="/redoc",
     lifespan=lifespan,
 )
 
-# CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -102,19 +69,6 @@ async def health_check():
     }
 
 
-# Root endpoint
-@app.get("/", tags=["Root"])
-async def root():
-    """Root endpoint with API information"""
-    return {
-        "service": settings.APP_NAME,
-        "version": settings.APP_VERSION,
-        "documentation": "/docs",
-        "health": "/health"
-    }
-
-
-# Include routers
 app.include_router(wallet_router, prefix="/api/v1")
 
 

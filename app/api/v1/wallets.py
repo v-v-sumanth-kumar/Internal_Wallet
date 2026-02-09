@@ -1,4 +1,3 @@
-"""Wallet API Endpoints"""
 from fastapi import APIRouter, Depends, HTTPException, Header, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, List
