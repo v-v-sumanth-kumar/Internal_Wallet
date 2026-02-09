@@ -62,37 +62,39 @@ async def topup_wallet(
             # Return cached response
             return cached["body"]
         
-        # Start database transaction
-        async with db.begin():
-            transaction = await service.topup_wallet(
-                user_id=request.user_id,
-                asset_type_code=request.asset_type_code,
-                amount=request.amount,
-                idempotency_key=idempotency_key,
-                payment_reference=request.payment_reference,
-                description=request.description
-            )
-            
-            response = TransactionResponse(
-                transaction_id=transaction.transaction_id,
-                transaction_type=transaction.transaction_type.value,
-                status=transaction.status.value,
-                from_wallet_id=transaction.from_wallet_id,
-                to_wallet_id=transaction.to_wallet_id,
-                amount=transaction.amount,
-                description=transaction.description,
-                created_at=transaction.created_at,
-                completed_at=transaction.completed_at
-            )
-            
-            # Save idempotency log
-            await service._save_idempotency_log(
-                idempotency_key=idempotency_key,
-                request_path="/api/v1/wallets/topup",
-                request_method="POST",
-                response_status=201,
-                response_body=response.model_dump(mode='json')
-            )
+        # Execute transaction (service manages DB transaction internally)
+        transaction = await service.topup_wallet(
+            user_id=request.user_id,
+            asset_type_code=request.asset_type_code,
+            amount=request.amount,
+            idempotency_key=idempotency_key,
+            payment_reference=request.payment_reference,
+            description=request.description
+        )
+        
+        response = TransactionResponse(
+            transaction_id=transaction.transaction_id,
+            transaction_type=transaction.transaction_type.value,
+            status=transaction.status.value,
+            from_wallet_id=transaction.from_wallet_id,
+            to_wallet_id=transaction.to_wallet_id,
+            amount=transaction.amount,
+            description=transaction.description,
+            created_at=transaction.created_at,
+            completed_at=transaction.completed_at
+        )
+        
+        # Save idempotency log
+        await service._save_idempotency_log(
+            idempotency_key=idempotency_key,
+            request_path="/api/v1/wallets/topup",
+            request_method="POST",
+            response_status=201,
+            response_body=response.model_dump(mode='json')
+        )
+        
+        # Commit the session
+        await db.commit()
         
         return response
     
@@ -144,34 +146,35 @@ async def issue_bonus(
         if cached:
             return cached["body"]
         
-        async with db.begin():
-            transaction = await service.issue_bonus(
-                user_id=request.user_id,
-                asset_type_code=request.asset_type_code,
-                amount=request.amount,
-                idempotency_key=idempotency_key,
-                reason=request.reason
-            )
-            
-            response = TransactionResponse(
-                transaction_id=transaction.transaction_id,
-                transaction_type=transaction.transaction_type.value,
-                status=transaction.status.value,
-                from_wallet_id=transaction.from_wallet_id,
-                to_wallet_id=transaction.to_wallet_id,
-                amount=transaction.amount,
-                description=transaction.description,
-                created_at=transaction.created_at,
-                completed_at=transaction.completed_at
-            )
-            
-            await service._save_idempotency_log(
-                idempotency_key=idempotency_key,
-                request_path="/api/v1/wallets/bonus",
-                request_method="POST",
-                response_status=201,
-                response_body=response.model_dump(mode='json')
-            )
+        transaction = await service.issue_bonus(
+            user_id=request.user_id,
+            asset_type_code=request.asset_type_code,
+            amount=request.amount,
+            idempotency_key=idempotency_key,
+            reason=request.reason
+        )
+        
+        response = TransactionResponse(
+            transaction_id=transaction.transaction_id,
+            transaction_type=transaction.transaction_type.value,
+            status=transaction.status.value,
+            from_wallet_id=transaction.from_wallet_id,
+            to_wallet_id=transaction.to_wallet_id,
+            amount=transaction.amount,
+            description=transaction.description,
+            created_at=transaction.created_at,
+            completed_at=transaction.completed_at
+        )
+        
+        await service._save_idempotency_log(
+            idempotency_key=idempotency_key,
+            request_path="/api/v1/wallets/bonus",
+            request_method="POST",
+            response_status=201,
+            response_body=response.model_dump(mode='json')
+        )
+        
+        await db.commit()
         
         return response
     
@@ -222,35 +225,36 @@ async def spend_credits(
         if cached:
             return cached["body"]
         
-        async with db.begin():
-            transaction = await service.spend_credits(
-                user_id=request.user_id,
-                asset_type_code=request.asset_type_code,
-                amount=request.amount,
-                idempotency_key=idempotency_key,
-                item_id=request.item_id,
-                description=request.description
-            )
-            
-            response = TransactionResponse(
-                transaction_id=transaction.transaction_id,
-                transaction_type=transaction.transaction_type.value,
-                status=transaction.status.value,
-                from_wallet_id=transaction.from_wallet_id,
-                to_wallet_id=transaction.to_wallet_id,
-                amount=transaction.amount,
-                description=transaction.description,
-                created_at=transaction.created_at,
-                completed_at=transaction.completed_at
-            )
-            
-            await service._save_idempotency_log(
-                idempotency_key=idempotency_key,
-                request_path="/api/v1/wallets/spend",
-                request_method="POST",
-                response_status=201,
-                response_body=response.model_dump(mode='json')
-            )
+        transaction = await service.spend_credits(
+            user_id=request.user_id,
+            asset_type_code=request.asset_type_code,
+            amount=request.amount,
+            idempotency_key=idempotency_key,
+            item_id=request.item_id,
+            description=request.description
+        )
+        
+        response = TransactionResponse(
+            transaction_id=transaction.transaction_id,
+            transaction_type=transaction.transaction_type.value,
+            status=transaction.status.value,
+            from_wallet_id=transaction.from_wallet_id,
+            to_wallet_id=transaction.to_wallet_id,
+            amount=transaction.amount,
+            description=transaction.description,
+            created_at=transaction.created_at,
+            completed_at=transaction.completed_at
+        )
+        
+        await service._save_idempotency_log(
+            idempotency_key=idempotency_key,
+            request_path="/api/v1/wallets/spend",
+            request_method="POST",
+            response_status=201,
+            response_body=response.model_dump(mode='json')
+        )
+        
+        await db.commit()
         
         return response
     
