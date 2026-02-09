@@ -17,7 +17,6 @@ from app.services.wallet_service import (
     AssetTypeNotFoundError,
     WalletNotFoundError,
 )
-from app.utils.idempotency import generate_idempotency_key
 
 logger = logging.getLogger(__name__)
 
