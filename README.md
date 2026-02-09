@@ -6,16 +6,6 @@ A high-performance wallet service for managing application-specific virtual curr
 
 This is a **closed-loop virtual wallet system** designed for high-traffic applications. It manages virtual credits that exist only within the application ecosystem - not real money, not cryptocurrency, and not transferable between users.
 
-### Key Features
-
-✅ **ACID Compliance** - All transactions are atomic, consistent, isolated, and durable  
-✅ **Concurrency Safe** - Pessimistic locking prevents race conditions  
-✅ **Idempotent Operations** - Duplicate requests return cached responses  
-✅ **Double-Entry Ledger** - Complete audit trail of all transactions  
-✅ **Deadlock Prevention** - Consistent lock ordering avoids database deadlocks  
-✅ **High Performance** - Async/await pattern for maximum throughput  
-✅ **Auto Documentation** - Interactive API docs via Swagger UI  
-
 ---
 
 ## 🏗️ Architecture
@@ -79,26 +69,74 @@ Flow: User Wallet → System Revenue
 
 ### Prerequisites
 
-- Docker & Docker Compose (recommended)
-- OR: Python 3.11+, PostgreSQL 15+
+- Docker & Docker Compose
 
-### Option 1: Docker (Recommended)
+---
+
+## 🗄️ Database Setup & Seeding
+
+### Docker Setup (Fully Automated)
+
+Docker automatically handles database creation, migrations, and seeding.
 
 ```bash
 # 1. Clone/navigate to project directory
 cd "Internal Wallet"
 
-# 2. Copy environment file
+# 2. Copy environment file (if needed)
 cp .env.example .env
 
-# 3. Start services (automatically runs migrations and seeds data)
+# 3. Start all services
 docker-compose up --build
-
-# 4. API will be available at:
-# - API Docs: http://localhost:8000/docs
-# - Health Check: http://localhost:8000/health
 ```
 
+**What happens automatically:**
+1. ✅ PostgreSQL 15 container starts
+2. ✅ Database migrations run (`alembic upgrade head`)
+3. ✅ Seed script executes (`python scripts/seed.py`)
+4. ✅ API server starts on port 8000
+
+**Verify it's working:**
+```bash
+# Check health
+curl http://localhost:8000/health
+
+# View API docs
+# Open: http://localhost:8000/docs
+```
+
+**What happens during startup:**
+
+The seed script (`scripts/seed.py`) automatically creates:
+
+1. **3 Asset Types:**
+   - `GOLD_COIN` - Primary in-game currency
+   - `DIAMOND` - Premium currency
+   - `LOYALTY_POINT` - Reward points
+
+2. **9 System Wallets** (3 per asset type):
+   - `SYSTEM_TREASURY_{ASSET}` - Source for top-ups (999,999,999 balance)
+   - `SYSTEM_BONUS_POOL_{ASSET}` - Source for bonuses (999,999,999 balance)
+   - `SYSTEM_REVENUE_{ASSET}` - Destination for user spending (0 balance)
+
+3. **3 Test Users** with initial balances:
+
+| User ID | Gold Coins | Diamonds | Loyalty Points |
+|---------|-----------|----------|----------------|
+| `user_alice` | 1,000.00 | 50.00 | 500.00 |
+| `user_bob` | 750.00 | 25.00 | 300.00 |
+| `user_charlie` | 2,500.00 | 100.00 | 1,200.00 |
+
+---
+
+### Re-seeding the Database
+
+If you need to reset and re-seed the database:
+
+```bash
+docker-compose down -v  # Remove volumes
+docker-compose up --build
+```
 
 ---
 
@@ -349,6 +387,8 @@ curl -X POST http://localhost:8000/api/v1/wallets/spend \
 ```
 
 ### Test Users (Seeded)
+
+The seed script automatically creates test users with initial balances. See the [Database Setup & Seeding](#-database-setup--seeding) section for details on how to run the seed script.
 
 | User ID | Gold Coins | Diamonds | Loyalty Points |
 |---------|-----------|----------|----------------|
