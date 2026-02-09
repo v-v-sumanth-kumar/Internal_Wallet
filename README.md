@@ -99,29 +99,6 @@ docker-compose up --build
 # - Health Check: http://localhost:8000/health
 ```
 
-### Option 2: Local Development
-
-```bash
-# 1. Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# 2. Install dependencies
-pip install -r requirements.txt
-
-# 3. Copy and configure environment
-cp .env.example .env
-# Edit .env with your PostgreSQL credentials
-
-# 4. Run migrations
-alembic upgrade head
-
-# 5. Seed database
-python scripts/seed.py
-
-# 6. Start server
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
 
 ---
 
@@ -358,26 +335,6 @@ credit_entry = LedgerEntry(
 3. Fill in parameters
 4. Don't forget to add `Idempotency-Key` header!
 
-### Using cURL
-
-**Get Balance:**
-```bash
-curl http://localhost:8000/api/v1/wallets/user_alice/balance?asset_type_code=GOLD_COIN
-```
-
-**Top-up Wallet:**
-```bash
-curl -X POST http://localhost:8000/api/v1/wallets/topup \
-  -H "Content-Type: application/json" \
-  -H "Idempotency-Key: topup_alice_$(date +%s)" \
-  -d '{
-    "user_id": "user_alice",
-    "asset_type_code": "GOLD_COIN",
-    "amount": 100.00,
-    "description": "Test top-up"
-  }'
-```
-
 **Spend Credits:**
 ```bash
 curl -X POST http://localhost:8000/api/v1/wallets/spend \
@@ -422,12 +379,6 @@ curl -X POST http://localhost:8000/api/v1/wallets/spend \
 - ✅ No need for retry logic on conflicts
 - ✅ Appropriate for financial operations
 
-**Alternative: Optimistic Locking** (not used)
-- Uses version numbers
-- Requires retry logic
-- Better for low-contention scenarios
-- More complex to implement correctly
-
 ### 4. **Why Double-Entry Ledger?**
 - ✅ Industry standard for financial systems
 - ✅ Complete audit trail
@@ -435,20 +386,6 @@ curl -X POST http://localhost:8000/api/v1/wallets/spend \
 - ✅ Easier debugging and reconciliation
 
 ---
-
-## 📈 Performance Considerations
-
-### Scalability
-
-**Current Setup:**
-- Handles 1000+ concurrent requests
-- Single database instance
-
-**For Higher Scale:**
-- Read replicas for balance queries
-- Connection pooling (already configured)
-- Redis caching for frequently accessed data
-- Horizontal scaling with load balancer
 
 ### Database Indexes
 
@@ -464,35 +401,6 @@ Index('idx_transaction_wallets', 'from_wallet_id', 'to_wallet_id')
 
 # Ledger queries
 Index('idx_ledger_wallet_created', 'wallet_id', 'created_at')
-```
-
----
-
-## 🔧 Configuration
-
-### Environment Variables
-
-```bash
-# Database
-DATABASE_URL=postgresql+asyncpg://wallet_user:wallet_pass@localhost:5432/wallet_db
-
-# Application
-APP_NAME="Internal Wallet Service"
-APP_VERSION="1.0.0"
-DEBUG=True
-HOST=0.0.0.0
-PORT=8000
-```
-
-### Database Connection Pool
-
-```python
-engine = create_async_engine(
-    settings.DATABASE_URL,
-    pool_size=10,        # Number of connections to maintain
-    max_overflow=20,     # Additional connections if needed
-    pool_pre_ping=True,  # Check connection health
-)
 ```
 
 ---
@@ -562,10 +470,7 @@ docker run -p 8000:8000 \
 
 ### Cloud Deployment
 
-**Recommended:**
-- **App**: AWS ECS, Google Cloud Run, or DigitalOcean App Platform
-- **Database**: AWS RDS PostgreSQL, Google Cloud SQL, or managed PostgreSQL
-- **Monitoring**: Sentry, DataDog, or CloudWatch
+deployed on render
 
 ---
 
@@ -604,16 +509,7 @@ internal-wallet/
 
 ---
 
-## 🎯 Bonus Features Implemented
 
-✅ **Deadlock Avoidance** - Consistent lock ordering  
-✅ **Double-Entry Ledger** - Complete audit trail  
-✅ **Containerization** - Docker + Docker Compose  
-✅ **Auto Documentation** - Interactive Swagger UI  
-✅ **Seed Script** - One-command setup  
-✅ **Async/Await** - High-performance async operations  
-
----
 
 ## 📞 Support
 
@@ -626,48 +522,5 @@ curl http://localhost:8000/health
 ### API Documentation
 
 - Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
 
-### Logs
 
-```bash
-# Docker logs
-docker-compose logs -f app
-
-# Local logs
-# Logs printed to stdout
-```
-
----
-
-## 🎓 Learning Resources
-
-### Double-Entry Bookkeeping
-- [Accounting 101 for Developers](https://martin.kleppmann.com/2011/03/07/accounting-for-computer-scientists.html)
-
-### Database Locking
-- [PostgreSQL Locking](https://www.postgresql.org/docs/current/explicit-locking.html)
-
-### Idempotency
-- [Stripe's Idempotency Guide](https://stripe.com/docs/api/idempotent_requests)
-
----
-
-## 📄 License
-
-MIT License - feel free to use for any purpose.
-
----
-
-## 🙏 Acknowledgments
-
-Built with:
-- FastAPI
-- PostgreSQL
-- SQLAlchemy
-- Alembic
-- Docker
-
----
-
-**Made with ❤️ for high-traffic applications**

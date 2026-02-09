@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
 from contextlib import asynccontextmanager
 import logging
 
@@ -19,11 +20,9 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan events"""
-    # Startup
     logger.info("Starting Internal Wallet Service...")
     logger.info(f"Database URL: {settings.DATABASE_URL.split('@')[1] if '@' in settings.DATABASE_URL else 'N/A'}")
     yield
-    # Shutdown
     logger.info("Shutting down Internal Wallet Service...")
     await close_db()
 
@@ -85,7 +84,6 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
-# Health check endpoint
 @app.get("/health", tags=["Health"])
 async def health_check():
     """Health check endpoint"""
